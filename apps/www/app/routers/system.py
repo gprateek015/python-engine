@@ -1,7 +1,5 @@
-import sys
 from fastapi import APIRouter
 
-from common.app.modules.llm.models.providers.open_router import OpenRouterProvider
 from common.core.config import config
 
 router = APIRouter(
@@ -11,6 +9,4 @@ router = APIRouter(
 
 @router.get("/health/")
 async def health():
-    privider = OpenRouterProvider()
-    print(privider.get_chat_completion())
     return {"status": "ok"}

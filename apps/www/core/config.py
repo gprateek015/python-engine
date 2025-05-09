@@ -12,6 +12,7 @@ if env_path and env_path != "":
 class Config:
     SERVICE_ROUTE_PREFIX: str = "/www"
     PORT: int = 8000
+    HOT_RELOAD: bool = True
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENROUTER_API_KEY: Optional[str] = os.getenv("OPENROUTER_API_KEY")
     GOOGLE_API_KEY: Optional[str] = os.getenv("GOOGLE_API_KEY")
@@ -19,6 +20,7 @@ class Config:
     AWS_REGION: str = "ap-south-1"
     AWS_ACCESS_KEY: Optional[str] = os.getenv("AWS_ACCESS_KEY")
     AWS_SECRET_KEY: Optional[str] = os.getenv("AWS_SECRET_KEY")
+    SMALLEST_AI_API_KEY: Optional[str] = os.getenv("SMALLEST_AI_API_KEY")
 
 
 class LocalConfig(Config):

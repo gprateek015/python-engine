@@ -1,13 +1,13 @@
-from typing import Literal
-from common.app.modules.tts.providers.base import TTSBaseProvider
-from common.app.modules.tts.providers.google import GoogleProvider
+from typing import AsyncIterator, Optional
+from common.app.modules.tts.providers.base import TTSBaseProvider, TTSProviderLiteral
+from common.app.modules.tts.providers.smallest_ai import SmallestAITTSProvider
 
 
 class TTSProvider:
     @staticmethod
     def get_provider(provider: str) -> TTSBaseProvider:
-        if provider == "google":
-            return GoogleProvider()
+        if provider == "smallest_ai":
+            return SmallestAITTSProvider()
         raise ValueError(f"Unsupported provider: {provider}")
 
     @classmethod
@@ -15,8 +15,23 @@ class TTSProvider:
         cls,
         text: str,
         voice: TTSBaseProvider.TTSVoice,
-        audio_config: TTSBaseProvider.TTSAudioConfig,
-        provider: Literal["google"] = "google",
-    ) -> str:
+        audio_config: Optional[TTSBaseProvider.TTSAudioConfig] = None,
+        provider: TTSProviderLiteral = "smallest_ai",
+    ) -> bytes:
         tts_provider = TTSProvider.get_provider(provider)
+        if audio_config is None:
+            audio_config = tts_provider.TTSAudioConfig()
         return await tts_provider.tts(text, voice, audio_config)
+
+    @classmethod
+    async def generate_audio_stream(
+        cls,
+        text: str,
+        voice: TTSBaseProvider.TTSVoice,
+        audio_config: Optional[TTSBaseProvider.TTSAudioConfig] = None,
+        provider: TTSProviderLiteral = "smallest_ai",
+    ) -> AsyncIterator[bytes]:
+        tts_provider = TTSProvider.get_provider(provider)
+        if audio_config is None:
+            audio_config = tts_provider.TTSAudioConfig()
+        return await tts_provider.tts_stream(text, voice, audio_config)

@@ -1,4 +1,3 @@
-import base64
 import uuid
 from apps.www.app.models.api.requests.story import GenerateStoryRequest
 from common.app.modules.llm.functions.story.generate.llm_component import (
@@ -10,8 +9,8 @@ from common.app.modules.llm.functions.story.models import (
 )
 from common.app.modules.tts.providers import TTSProvider
 from common.app.modules.tts.providers.base import TTSBaseProvider
+from common.app.modules.tts.providers.smallest_ai import SmallestAITTSProvider
 from common.core.s3 import async_s3_client
-from apps.www.core.config import config
 
 
 class StoryService:
@@ -32,34 +31,30 @@ class StoryService:
         )
         assert isinstance(story_text, GenerateStoryOutputModel)
 
-        voice_name = "en-IN-Chirp3-HD-Achird"
-        voice_language_code = "en-IN"
+        voice_name = "emily"
+        voice_language_code = "en"
 
         if data.language == "hindi":
-            voice_name = "hi-IN-Chirp3-HD-Achernar"
-            voice_language_code = "hi-IN"
+            voice_name = "ronald"
+            voice_language_code = "hi"
 
         audio_content = await TTSProvider.generate_audio(
             text=story_text.story,
-            voice=TTSBaseProvider.TTSVoice(
+            voice=SmallestAITTSProvider.TTSVoice(
                 language_code=voice_language_code,
-                name=voice_name,
-                voice_clone=None,
-                gender="male",
+                voice_id=voice_name,
+                model="lightning",
             ),
-            audio_config=TTSBaseProvider.TTSAudioConfig(
-                audio_encoding="LINEAR16",
-            ),
+            audio_config=TTSBaseProvider.TTSAudioConfig(),
+            provider="smallest_ai",
         )
-
-        audio_bytes = base64.b64decode(audio_content)
 
         key = f"stories/{uuid.uuid4()}.wav"
 
         await async_s3_client.put_object(
             Bucket="taletalk",
             Key=key,
-            Body=audio_bytes,
+            Body=audio_content,
         )
 
         url = await async_s3_client.get_s3_url(Bucket="taletalk", Key=key)

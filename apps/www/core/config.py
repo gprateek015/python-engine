@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Dict
+from typing import Dict, Optional
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -12,8 +12,13 @@ if env_path and env_path != "":
 class Config:
     SERVICE_ROUTE_PREFIX: str = "/www"
     PORT: int = 8000
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
-    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY")
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    OPENROUTER_API_KEY: Optional[str] = os.getenv("OPENROUTER_API_KEY")
+    GOOGLE_API_KEY: Optional[str] = os.getenv("GOOGLE_API_KEY")
+    GOOGLE_PROJECT_ID: Optional[str] = os.getenv("GOOGLE_PROJECT_ID")
+    AWS_REGION: str = "ap-south-1"
+    AWS_ACCESS_KEY: Optional[str] = os.getenv("AWS_ACCESS_KEY")
+    AWS_SECRET_KEY: Optional[str] = os.getenv("AWS_SECRET_KEY")
 
 
 class LocalConfig(Config):

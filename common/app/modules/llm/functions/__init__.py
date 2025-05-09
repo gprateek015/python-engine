@@ -84,6 +84,3 @@ class LLMFunction(BaseModel):
             return self.output_model.model_validate(intermediate_outputs[-1])
         else:
             return intermediate_outputs[-1]
-
-
-# AIzaSyAuIKLYcSc7_emjDHLVb1315OR-VQflFV4

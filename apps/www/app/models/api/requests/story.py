@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel
 
 
@@ -7,5 +7,5 @@ class GenerateStoryRequest(BaseModel):
     target_length: str
     theme: str
     tone: str
-    language: str
+    language: Literal["english", "hindi"] = "english"
     story_idea: Optional[str]

@@ -5,7 +5,7 @@
 from typing import Optional
 
 from common.app.modules.llm.promtps import LLMPromptItem
-from common.app.modules.llm.providers.base import BaseProvider
+from common.app.modules.llm.providers.base import LLMBaseProvider
 from common.app.modules.llm.providers.open_router import OpenRouterProvider
 
 
@@ -14,7 +14,7 @@ class LLMProvider:
         self.provider = provider
 
     @staticmethod
-    def get_provider(model: str) -> BaseProvider:
+    def get_provider(model: str) -> LLMBaseProvider:
         return OpenRouterProvider()
 
     @classmethod
@@ -24,7 +24,6 @@ class LLMProvider:
         prompt: list[LLMPromptItem],
         provider: Optional[dict],
         reasoning: Optional[dict],
-        stream: bool = False,
         usage: Optional[dict] = None,
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
@@ -61,5 +60,5 @@ class LLMProvider:
         )
 
     @classmethod
-    def get_chat_completion_stream(self, messages: list[dict]):
+    def get_chat_completion_stream(cls, messages: list[dict]):
         pass

@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "driven-wonder-459220-t3",
+  "private_key_id": "e2c0913abffd01cf4cab47e6c3560952f26d072a",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCbHaRjMjKQmkko\nWy01jNa5BzsOMNKkN4xB4MDVGk5GXgOPxRwASOKTcmZaW901SdTUHynMj7GOWpK9\n2839ndTM4HZMu/y6Ry5FJ4QIH347QwJrntq3oXAJAcniaOLKfhUa9OTeTNUsW8AC\n2D1qMWpfen3XP86G/QdqWAKk5QT/dS96ssv19XPrL/YNgH8MkP55cB8zgU4j/mr6\nSKaQe7dFgkUk5Y9Nboci5mSOMuqjWDLvTTV5pKTfrY2AgcA/eWdX/P52mDEJM3H1\ndSQnwSKhuykzCyS8lRqJBzOSWvTd0tiPTyxHIGI0ygpem1rUilx/zmQdIoHhxyx2\nk96GHMI1AgMBAAECggEADnVqDCMINT65wKzAXzmkZDUz1dlK29V1BJ5WFdHGEmdo\nrpSMIndTbgoKV17bv5VaZMwOLIwHsWy+OTtNYq1nwhHO2nflZq8ENZxULCD/YQ0Y\neH6jWt2N9hD4HVtzKbaB8h7PXJdN1ueAfji41MwMDcqlremRLzepDXUXCKweVfoU\nU/8B8lSK9RJjNuXdfyR/GZNV77OcStdmiHMgOhmdK9FhEB54vYzzC+WHGvq4lAPu\nEaVoVKSx9OyOAAl2YNdSi3ffmzYsmZPTy5a4u9zZCSomJY9+p0zHGjxFBWQR/65I\nCTTqpAHME7IonwJr1aY0zCRbCtmpcKcH5uYJgA1Z2wKBgQDTcnKDVN0HyFplG/Xl\nrT6W4b5SfLJelWEWjAY/ZSwtAelhyoKHn9zvBV83y4wrnF5Bp7Ia1wROF8xDLzdS\nsDva20EyiKRly//nirWo2ydhhe2Iy7RFdUuAx1OjJe0HE4g0xKMSiV38rmE2PpG0\nF2QfYJcu5R8JSx+T+9JrAepKtwKBgQC7zKjw0F+WrixHnbfQTfOxVoogreMkVyLe\nxwSKo/y6eS/DeeuITVt7WJI7KXSRVQ4KRhWR4ph2niXL85imafoj0gtzZ8bdMUSb\n5UEHdYTXGh6FZKMulpPZXsW/cWQ5ozHrevQ99zV2Hsy4ciF9G9eqj2n6FkjCINXv\nWs3zWwJecwKBgGAF/18I8P+RywtTsU3GaUAX8FiBbHdrmxWkLUoo5fDih1vznWd9\n/9VEOUObWmKLtnpWb5mkv72/LPHtxU/13Ji9LVSHnTDlfadm5Kx0KeQt7/tJlupc\nJBetbZwPox6tjhN4oR3P6DDR+C+sJnsEjGF7eey//GI6DXMkzx/tVLrtAoGAW9l0\nAxuWtMaI55nuzdViS6iss+D4B80KQ/UIdppPwBAHWU6m8KoNBR3Dn2XeGjqEPGgc\nopY1xUYB7Gc+kJ2idqSDbzUhYQt4p9qPXIuQpfejV9Bpsx54P0cH5mMaBsqXXrlq\n/WeL4TKdI9TGJj9Y0pWD2onNmgyfNYqu0cgAN5sCgYEAsbHBrj6csy/H+CSa6XkH\nhHSvbI4yPm826joYiwoheps6/xU91Zp25YNkGaklKfDFGpLq2u9yFR0r9vRxvyjW\nqgAyWqdxXqXCxAiXpLC6R++BhvO8xalHHqkALlduEL+q20+kMRy752wk65WtwYO7\ne+oQtqBP0pZgO0kQneBHTQ8=\n-----END PRIVATE KEY-----\n",
+  "client_email": "taletalk@driven-wonder-459220-t3.iam.gserviceaccount.com",
+  "client_id": "103546052200404112554",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/taletalk%40driven-wonder-459220-t3.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

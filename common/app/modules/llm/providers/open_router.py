@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 import httpx
 from openai import AsyncOpenAI
 from openai.types.chat import (
@@ -8,12 +8,11 @@ from openai.types.chat import (
 )
 
 from common.app.modules.llm.promtps import LLMPromptItem
-from common.app.modules.llm.providers.base import BaseProvider
+from common.app.modules.llm.providers.base import LLMBaseProvider
 
 
-class OpenRouterProvider(BaseProvider):
-    def __init__(self):
-        super().__init__(provider="openrouter")
+class OpenRouterProvider(LLMBaseProvider):
+    provider: Literal["openrouter"] = "openrouter"
 
     def _convert_to_message_params(
         self, prompt: List[LLMPromptItem]
@@ -67,8 +66,7 @@ class OpenRouterProvider(BaseProvider):
         completion = await client.chat.completions.create(
             model=model,
             messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
         )
         return completion.choices[0].message.content
-
-
-# google/gemini-2.0-flash-exp:free

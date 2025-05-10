@@ -1,8 +1,8 @@
 {
   "builds": [
     {
-      "src": "apps/www/app/main.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "src": "apps/www/app/main.py"
     }
   ],
   "routes": [

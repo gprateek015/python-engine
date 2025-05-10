@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import AsyncGenerator, AsyncIterator, List, Literal, Optional, Union
 import httpx
 from openai import AsyncOpenAI
 from openai.types.chat import (
@@ -52,7 +52,7 @@ class OpenRouterProvider(LLMBaseProvider):
         top_logprobs: Optional[int] = None,
         min_p: Optional[float] = None,
         top_a: Optional[float] = None,
-    ):
+    ) -> Optional[str]:
         api_key = self.get_api_key()
 
         client = AsyncOpenAI(
@@ -68,5 +68,48 @@ class OpenRouterProvider(LLMBaseProvider):
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
+            stream=False,
         )
         return completion.choices[0].message.content
+    
+    async def get_chat_completion_with_streaming(
+        self,
+        model: str,
+        prompt: List[LLMPromptItem],
+        provider: Optional[dict],
+        reasoning: Optional[dict],
+        usage: Optional[dict],
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        seed: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        repetition_penalty: Optional[float] = None,
+        logit_bias: Optional[dict[str, float]] = None,
+        top_logprobs: Optional[int] = None,
+        min_p: Optional[float] = None,
+        top_a: Optional[float] = None,
+    ) -> AsyncGenerator[str, None]:
+        api_key = self.get_api_key()
+
+        client = AsyncOpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+            http_client=httpx.AsyncClient(),
+        )
+
+        messages = self._convert_to_message_params(prompt)
+
+        async for chunk in await client.chat.completions.create(
+            messages=messages,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stream=True,
+        ):
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
+        
+    

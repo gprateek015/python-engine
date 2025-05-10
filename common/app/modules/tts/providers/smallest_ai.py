@@ -1,10 +1,19 @@
 import re
 from smallestai.waves import AsyncWavesClient
 
-from typing import AsyncIterator, List, Literal
+from typing import AsyncIterator, List, Literal, Optional
 from common.app.modules.tts.providers.base import TTSBaseProvider
 import aiohttp
 
+from pydub import AudioSegment
+from io import BytesIO
+
+def add_wav_header(frame_input: bytes, sample_rate: Optional[int] = 24000, sample_width: int = 2, channels: int = 1) -> bytes:
+    audio = AudioSegment(data=frame_input, sample_width=sample_width, frame_rate=sample_rate, channels=channels)
+    wav_buf = BytesIO()
+    audio.export(wav_buf, format="wav")
+    wav_buf.seek(0)
+    return wav_buf.read()
 
 def chunk_text(text: str, chunk_size: int = 250) -> List[str]:
     SENTENCE_END_REGEX = re.compile(r".*[-.—!?,;:…।|]$")
@@ -73,41 +82,38 @@ class SmallestAITTSProvider(TTSBaseProvider):
                 chunk_size = 140
             chunks = chunk_text(text, chunk_size)
 
-            async def audio_stream():
-                for chunk in chunks:
-                    payload = {
-                        "text": chunk,
-                        "sample_rate": voice.sample_rate,
-                        "voice_id": voice.voice_id,
-                        "add_wav_header": True,
-                        "speed": voice.speed,
-                        "model": voice.model,
-                    }
+            for chunk in chunks:
+                payload = {
+                    "text": chunk,
+                    "sample_rate": audio_config.sample_rate,
+                    "voice_id": voice.voice_id,
+                    "add_wav_header": False,
+                    "speed": audio_config.speed,
+                    "model": voice.model,
+                }
 
-                    if voice.model == "lightning-large":
-                        if voice.consistency is not None:
-                            payload["consistency"] = voice.consistency
-                        if voice.similarity is not None:
-                            payload["similarity"] = voice.similarity
-                        if voice.enhancement is not None:
-                            payload["enhancement"] = voice.enhancement
+                if voice.model == "lightning-large":
+                    if audio_config.consistency is not None:
+                        payload["consistency"] = audio_config.consistency
+                    if audio_config.similarity is not None:
+                        payload["similarity"] = audio_config.similarity
+                    if audio_config.enhancement is not None:
+                        payload["enhancement"] = audio_config.enhancement
 
-                    headers = {
-                        "Authorization": f"Bearer {self.get_api_key()}",
-                        "Content-Type": "application/json",
-                    }
+                headers = {
+                    "Authorization": f"Bearer {self.get_api_key()}",
+                    "Content-Type": "application/json",
+                }
 
-                    async with session.post(
-                        url=url, json=payload, headers=headers
-                    ) as res:
-                        if res.status != 200:
-                            raise Exception(
-                                f"Failed to synthesize speech: {await res.text()}. For more information, visit https://waves.smallest.ai/"
-                            )
+                async with session.post(
+                    url=url, json=payload, headers=headers
+                ) as res:
+                    if res.status != 200:
+                        raise Exception(
+                            f"Failed to synthesize speech: {await res.text()}. For more information, visit https://waves.smallest.ai/"
+                        )
 
-                        yield await res.read()
-
-        return audio_stream()
+                    yield await res.read()
 
     async def tts(
         self,
@@ -115,7 +121,8 @@ class SmallestAITTSProvider(TTSBaseProvider):
         voice: TTSVoice,
         audio_config: TTSBaseProvider.TTSAudioConfig,
     ) -> bytes:
-        audio_content = b""
-        async for chunk in await self.tts_stream(text, voice, audio_config):
-            audio_content += chunk
-        return audio_content
+        audio_content = bytearray()
+        async for chunk in self.tts_stream(text, voice, audio_config):
+            audio_content.extend(chunk)
+        
+        return add_wav_header(audio_content, sample_rate=audio_config.sample_rate)

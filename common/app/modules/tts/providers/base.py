@@ -14,16 +14,17 @@ class TTSBaseProvider(BaseModel):
         voice_id: str
         model: Optional[str] = None
         gender: Optional[Literal["male", "female", "neutral"]] = "male"
-        speed: Optional[float] = 1.0
-        consistency: Optional[float] = 0.5
-        similarity: Optional[float] = 0.0
-        enhancement: Optional[int] = 1
-        sample_rate: Optional[int] = 24000
+        
 
     class TTSAudioConfig(BaseModel):
         audio_encoding: Literal[
             "LINEAR16", "MP3", "OGG_OPUS", "MULAW", "ALAW", "PCM"
-        ] = "MP3"
+        ] = "LINEAR16"
+        sample_rate: Optional[int] = 24000
+        speed: Optional[float] = 1.0
+        consistency: Optional[float] = 0.5
+        similarity: Optional[float] = 0.0
+        enhancement: Optional[int] = 1
 
     def get_api_key(self) -> str:
         api_key: Optional[str] = None
@@ -48,4 +49,5 @@ class TTSBaseProvider(BaseModel):
         text: str,
         voice: TTSVoice,
         audio_config: TTSAudioConfig,
-    ) -> AsyncIterator[bytes]: ...
+    ) -> AsyncIterator[bytes]: 
+        yield b""

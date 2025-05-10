@@ -34,4 +34,4 @@ class TTSProvider:
         tts_provider = TTSProvider.get_provider(provider)
         if audio_config is None:
             audio_config = tts_provider.TTSAudioConfig()
-        return await tts_provider.tts_stream(text, voice, audio_config)
+        return tts_provider.tts_stream(text, voice, audio_config)

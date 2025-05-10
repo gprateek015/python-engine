@@ -21,7 +21,7 @@ def extend_prompt(
             role="user",
             content=f"""
     Generate a story about {params.theme} in {params.language} with {params.genre} genre.
-    The story should be {params.target_length} long.
+    The story should be around 200 to 300 words long.
     The story should be {params.story_idea} story idea.
     The story should be {params.tone} tone.
     """,
@@ -29,10 +29,6 @@ def extend_prompt(
     ]
 
 
-def generate_story_transfrom_output(completion: str) -> Dict[str, Any]:
-    return {
-        "story": completion,
-    }
 
 
 generate_story_llm_component = LLMFunction(
@@ -45,6 +41,6 @@ generate_story_llm_component = LLMFunction(
             model="google/gemini-2.0-flash-exp:free",
             extend_prompt=extend_prompt,
         ),
-        LLMFunction.TransformStep(function=generate_story_transfrom_output),
     ],
+    stream=True,
 )

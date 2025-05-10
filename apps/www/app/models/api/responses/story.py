@@ -3,5 +3,6 @@ from pydantic import BaseModel
 
 
 class GenerateStoryResponse(BaseModel):
-    url: str
+    story: str
+    audio_url: str
     success: Literal["ok"] = "ok"

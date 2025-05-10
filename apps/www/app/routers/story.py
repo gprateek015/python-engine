@@ -1,4 +1,6 @@
+import json
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 
 from apps.www.app.models.api.requests.story import GenerateStoryRequest
 from apps.www.app.models.api.responses.story import GenerateStoryResponse
@@ -12,5 +14,12 @@ router = APIRouter(
 
 @router.post("/")
 async def generate_story(data: GenerateStoryRequest):
-    url = await StoryService.generate_story(data)
-    return GenerateStoryResponse(url=url)
+    story_text, url = await StoryService.generate_story(data)
+    return GenerateStoryResponse(story=story_text, audio_url=url)
+
+@router.post("/sse")
+async def generate_story_sse(request: GenerateStoryRequest):
+    async def event_stream():
+        async for event, data in StoryService.generate_story_sse(request):
+            yield f"data: {json.dumps({'event': event, 'text': data})}\n\n"
+    return StreamingResponse(event_stream(), media_type="text/event-stream")

@@ -19,7 +19,7 @@ class Config:
     GOOGLE_PROJECT_ID: Optional[str] = os.getenv("GOOGLE_PROJECT_ID")
     AWS_REGION: str = "ap-south-1"
     AWS_ACCESS_KEY: Optional[str] = os.getenv("AWS_ACCESS_KEY")
-    AWS_ACCESS_SECRET_KEY: Optional[str] = os.getenv("AWS_ACCESS_SECRET_KEY")
+    AWS_SECRET_ACCESS_KEY: Optional[str] = os.getenv("AWS_SECRET_ACCESS_KEY")
     SMALLEST_AI_API_KEY: Optional[str] = os.getenv("SMALLEST_AI_API_KEY")
 
 

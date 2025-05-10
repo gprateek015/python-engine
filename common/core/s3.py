@@ -14,7 +14,7 @@ class AsyncS3Client:
                 "s3",
                 region_name=self.region_name,
                 aws_access_key_id=config.AWS_ACCESS_KEY,
-                aws_secret_access_key=config.AWS_ACCESS_SECRET_KEY,
+                aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
             ).__aenter__()
         return self.client
 

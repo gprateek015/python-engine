@@ -12,7 +12,7 @@ from common.app.modules.tts.providers import TTSProvider
 from common.app.modules.tts.providers.base import TTSBaseProvider
 from common.app.modules.tts.providers.smallest_ai import SmallestAITTSProvider
 from common.core.s3 import async_s3_client
-
+from common.core.config import config
 
 class StoryService:
     @classmethod
@@ -79,10 +79,17 @@ class StoryService:
             ),
         )
         assert isinstance(llm_execution, AsyncGenerator)
+        line_to_send, generated_story = "", ""
         async for chunk in llm_execution:
             story_text += chunk
-            yield ("story_text_append", chunk)
-        
+            generated_story += chunk
+            if "\n" in generated_story:
+                line_to_send, generated_story = generated_story.split("\n", 1)
+                yield ("story_text_append", line_to_send)
+            
+        for line_to_send in generated_story.split("\n"):
+            yield ("story_text_append", line_to_send)
+
         voice_name = "emily"
         voice_language_code = "en"
 

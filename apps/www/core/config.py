@@ -12,7 +12,8 @@ if env_path and env_path != "":
 class Config:
     SERVICE_ROUTE_PREFIX: str = "/www"
     PORT: int = 8000
-    HOT_RELOAD: bool = True
+    HOT_RELOAD = ...
+    ENVIRONMENT = ...
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENROUTER_API_KEY: Optional[str] = os.getenv("OPENROUTER_API_KEY")
     GOOGLE_API_KEY: Optional[str] = os.getenv("GOOGLE_API_KEY")
@@ -24,14 +25,17 @@ class Config:
 
 
 class LocalConfig(Config):
+    ENVIRONMENT: str = "local"
     HOT_RELOAD: bool = True
 
 
 class DevelopmentConfig(Config):
+    ENVIRONMENT: str = "development"
     HOT_RELOAD: bool = False
 
 
 class ProductionConfig(Config):
+    ENVIRONMENT: str = "production"
     HOT_RELOAD: bool = False
 
 

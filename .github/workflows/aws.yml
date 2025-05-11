@@ -5,7 +5,7 @@ on:
     branches: ['main']
 
 jobs:
-  build:
+  deploy:
     runs-on: self-hosted
 
     steps:
@@ -18,7 +18,10 @@ jobs:
           pip install --upgrade pip
           pip install -r apps/www/requirements.txt
 
-      - name: Run FastAPI server
+      - name: Restart FastAPI systemd service
         run: |
-          source .venv/bin/activate
-          python run_www.py
+          sudo systemctl restart fastapi-www
+
+      - name: Verify service is running
+        run: |
+          sudo systemctl status fastapi-www --no-pager

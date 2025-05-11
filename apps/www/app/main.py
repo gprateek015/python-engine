@@ -20,7 +20,3 @@ app.add_middleware(
 
 app.include_router(system_router)
 app.include_router(story_router)
-
-@app.get("/")
-async def root():
-    return {"message": "Server up and running"}

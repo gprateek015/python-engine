@@ -3,6 +3,7 @@ from fastapi import FastAPI
 # import routers
 from apps.www.app.routers.system import router as system_router
 from apps.www.app.routers.story import router as story_router
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -19,3 +20,7 @@ app.add_middleware(
 
 app.include_router(system_router)
 app.include_router(story_router)
+
+@app.get("/")
+async def root():
+    return {"message": "Server up and running"}

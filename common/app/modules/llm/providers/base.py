@@ -6,13 +6,15 @@ from common.core.config import config
 
 
 class LLMBaseProvider(BaseModel):
-    provider: Literal["openrouter"]
+    provider: Literal["openrouter", "gemini"]
 
     def get_api_key(self) -> str:
         # Get all api keys using the provider
         api_key: Optional[str] = None
         if self.provider == "openrouter":
             api_key = config.OPENROUTER_API_KEY
+        elif self.provider == "gemini":
+            api_key = config.GEMINI_API_KEY
 
         if not api_key:
             raise Exception("API key not found")

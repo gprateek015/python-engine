@@ -3,6 +3,7 @@ from fastapi import FastAPI
 # import routers
 from apps.www.app.routers.system import router as system_router
 from apps.www.app.routers.story import router as story_router
+from apps.www.app.routers.character import router as character_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,3 +21,4 @@ app.add_middleware(
 
 app.include_router(system_router)
 app.include_router(story_router)
+app.include_router(character_router)

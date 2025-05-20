@@ -1,33 +1,32 @@
 from typing import AsyncGenerator, AsyncIterator, List, Literal, Optional, Union
-import httpx
-from openai import AsyncOpenAI
+from google import genai
+from google.genai import types
 from openai.types.chat import (
     ChatCompletionMessageParam,
     ChatCompletionUserMessageParam,
     ChatCompletionAssistantMessageParam,
 )
+from pydantic import BaseModel
 
 from common.app.modules.llm.promtps import LLMPromptItem
 from common.app.modules.llm.providers.base import LLMBaseProvider
 
 
-class OpenRouterProvider(LLMBaseProvider):
-    provider: Literal["openrouter"] = "openrouter"
+class GeminiProvider(LLMBaseProvider):
+    provider: Literal["gemini"] = "gemini"
 
-    def _convert_to_message_params(
+    def _convert_to_message_format(
         self, prompt: List[LLMPromptItem]
-    ) -> List[ChatCompletionMessageParam]:
-        messages: List[ChatCompletionMessageParam] = []
+    ) -> types.ContentListUnion:
+        messages: types.ContentListUnion = []
         for message in prompt:
             if message.role == "user":
                 messages.append(
-                    ChatCompletionUserMessageParam(role="user", content=message.content)
+                    types.Content(role="user", parts=[types.Part(text=message.content)])
                 )
             elif message.role == "assistant":
                 messages.append(
-                    ChatCompletionAssistantMessageParam(
-                        role="assistant", content=message.content
-                    )
+                    types.Content(role="assistant", parts=[types.Part(text=message.content)])
                 )
             else:
                 continue
@@ -55,22 +54,28 @@ class OpenRouterProvider(LLMBaseProvider):
     ) -> Optional[str]:
         api_key = self.get_api_key()
 
-        client = AsyncOpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-            http_client=httpx.AsyncClient(),
-        )
+        client = genai.Client(api_key=api_key)
+        messages = self._convert_to_message_format(prompt)
 
-        messages = self._convert_to_message_params(prompt)
+        system_prompt = ""
+        response_schema=None
 
-        completion = await client.chat.completions.create(
+        response = await client.aio.models.generate_content(
             model=model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stream=False,
+            contents=messages,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+                top_p=top_p,
+                top_k=top_k,
+                frequency_penalty=frequency_penalty,
+                presence_penalty=presence_penalty,
+                response_schema=response_schema,
+                seed=seed,
+            )
         )
-        return completion.choices[0].message.content
+        return response.text
     
     async def get_chat_completion_with_streaming(
         self,
@@ -94,22 +99,27 @@ class OpenRouterProvider(LLMBaseProvider):
     ) -> AsyncGenerator[str, None]:
         api_key = self.get_api_key()
 
-        client = AsyncOpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-            http_client=httpx.AsyncClient(),
-        )
+        client = genai.Client(api_key=api_key)
 
-        messages = self._convert_to_message_params(prompt)
+        system_prompt = ""
+        response_schema=None
 
-        async for chunk in await client.chat.completions.create(
-            messages=messages,
+        messages = self._convert_to_message_format(prompt)
+
+        async for chunk in await client.aio.models.generate_content_stream(
+            contents=messages,
             model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stream=True,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+                top_p=top_p,
+                top_k=top_k,
+                frequency_penalty=frequency_penalty,
+                presence_penalty=presence_penalty,
+                response_schema=response_schema,
+                seed=seed,
+            )
         ):
-            if chunk.choices[0].delta.content is not None:
-                yield chunk.choices[0].delta.content
-        
-    
+            if chunk.text is not None:
+                yield chunk.text

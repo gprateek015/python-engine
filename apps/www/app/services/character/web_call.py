@@ -4,13 +4,32 @@ import json
 import time
 from typing import Optional, Tuple
 from aiohttp import web
-from aiortc import RTCConfiguration, RTCIceServer, RTCPeerConnection, RTCSessionDescription
+from aiortc import (
+    RTCConfiguration,
+    RTCIceServer,
+    RTCPeerConnection,
+    RTCSessionDescription,
+)
 from aiortc.rtcrtpreceiver import RemoteStreamTrack
 from aiortc.contrib.signaling import add_signaling_arguments, create_signaling
 from aiortc.contrib.media import MediaRecorder
 from av import AudioFrame
-from deepgram import DeepgramClient, PrerecordedOptions, LiveOptions, ListenWebSocketClient, LiveTranscriptionEvents, AsyncListenWebSocketClient, ListenWebSocketOptions
+from deepgram import (
+    DeepgramClient,
+    PrerecordedOptions,
+    LiveOptions,
+    ListenWebSocketClient,
+    LiveTranscriptionEvents,
+    AsyncListenWebSocketClient,
+    ListenWebSocketOptions,
+)
 from common.app.modules.live_completion.providers.gemini import LiveGeminiProvider
+from common.app.modules.live_completion.types.request import (
+    AudioMessageRequest,
+    TextMessageRequest,
+)
+from common.app.modules.live_completion.types.response import MessageResponse
+from common.app.modules.stt.providers.deepgram import LiveDeepgramSTTProvider
 from common.core.config import config
 import numpy as np
 import wave
@@ -24,157 +43,99 @@ import asyncio
 class AudioCallServer:
     def __init__(self):
         self.pc: RTCPeerConnection | None = None
-        self.audio = bytearray()
-        self.connect_task: asyncio.Task | None = None
 
     async def offer(self, request):
         params = await request.json()
-        offer = RTCSessionDescription(sdp=params['sdp'], type=params['type'])
+        offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
         self.pc = RTCPeerConnection(
             configuration=RTCConfiguration(
-                iceServers=[
-                    RTCIceServer(
-                        urls=["stun:stun.l.google.com:19302"]
-                    )
-                ]
+                iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
             )
         )
 
         async def get_audio_track():
-        # Implement audio track retrieval logic here
+            # Implement audio track retrieval logic here
             pass
 
         def on_ice_connection_state_change():
             if self.pc is not None:
-                print('ICE connection state is %s' % self.pc.iceConnectionState)
-        
-        async def handle_audio_frame(pcm_bytes, sample_rate, channels):
-            # Here you can send pcm_bytes to a STT engine (e.g., Vosk, Whisper, Google STT)
-            print(f"Received audio frame with {len(pcm_bytes)} bytes")
-            self.audio.extend(pcm_bytes)
+                print("ICE connection state is %s" % self.pc.iceConnectionState)
 
         # recorder = MediaRecorder('output.wav')
         async def on_track(track: RemoteStreamTrack):
             print(f"Track received: {track.kind}")
-            
-            api_key = config.DEEPGRAM_API_KEY
-            if api_key is None:
-                raise ValueError("DEEPGRAM_API_KEY is not set")
 
-            deepgram = DeepgramClient(api_key)
-            dg_connection = deepgram.listen.asyncwebsocket.v("1")
-
-            provider = LiveGeminiProvider(config={
+            gemini_config = {
                 "model": "gemini-2.0-flash-live-001",
                 "temperature": 0.5,
                 "max_tokens": 20000,
-                "modality": "TEXT",
-            })
+                "modality": "TEXT",  # "AUDIO",
+                # "voice_config": {
+                #     "language_code": "en-IN",
+                #     "voice_id": "Puck",  # Puck, Charon, Kore, Fenrir, Aoede, Leda, Orus, and Zephyr
+                # },
+            }
+            async with LiveDeepgramSTTProvider.start() as stt_provider, LiveGeminiProvider.start(
+                gemini_config
+            ) as llm_provider:
 
-            async def on_ai_response(message: str | Tuple[bytes, str]):
-                if isinstance(message, str):
-                    print(f"AI response: {message}")
-                else:
-                    print(message[1], message[0])
+                async def on_ai_response(message: MessageResponse):
+                    if message.type == "text":
+                        print(f"AI response: {message.text}")
+                    else:
+                        print(f"AI response: {message.audio}")
 
-            message_queue = asyncio.Queue[Tuple[str | Tuple[bytes, str], Optional[bool]]](maxsize=10)
+                await llm_provider.on("message", on_ai_response)
 
-            self.connect_task = asyncio.create_task(provider.connect(message_queue, on_ai_response))
+                async def on_open(self, open, **kwargs):
+                    print(f"\n\n{open}\n\n")
 
-            assert isinstance(dg_connection, AsyncListenWebSocketClient)
-            
-            @track.on("ended")
-            async def on_track_ended():
-                await dg_connection.finish()
+                async def on_message(self, result, **kwargs):
+                    sentence = result.channel.alternatives[0].transcript
+                    if len(sentence) == 0:
+                        return
+                    print(f"speaker: {sentence}")
+                    await llm_provider.send(TextMessageRequest(text=sentence))
 
-            async def on_open(self, open, **kwargs):
-                print(f"\n\n{open}\n\n")
+                async def on_utterance_end(self, utterance_end, **kwargs):
+                    print(f"\n\n{utterance_end}\n\n")
+                    await llm_provider.send(
+                        TextMessageRequest(text="", turn_complete=True)
+                    )
+                    # await llm_provider.close()
 
-            async def on_message(selff, result, **kwargs):
-                sentence = result.channel.alternatives[0].transcript
-                if len(sentence) == 0:
-                    return
-                print(f"speaker: {sentence}")
-                if self.connect_task is None:
-                    while not message_queue.empty():
-                        await message_queue.get()
-                    self.connect_task = asyncio.create_task(provider.connect(message_queue, on_ai_response))
-                await message_queue.put((sentence, None))
+                async def on_error(self, error, **kwargs):
+                    print(f"\n\n{error}\n\n")
 
-            async def on_utterance_end(selff, utterance_end, **kwargs):
-                print(f"\n\n{utterance_end}\n\n")
-                await message_queue.put(("", True))
-                await asyncio.sleep(1)
-                if self.connect_task is not None:
-                    await self.connect_task
-                    self.connect_task = None
+                async def on_close(self, close, **kwargs):
+                    print(f"\n\n{close}\n\n")
 
-            async def on_error(self, error, **kwargs):
-                print(f"\n\n{error}\n\n")
+                # Event handler for when the track ends
+                track.on("ended", stt_provider.close)
+                # Event handler for when the STT
+                stt_provider.on(LiveTranscriptionEvents.Open, on_open)  # type: ignore
+                stt_provider.on(LiveTranscriptionEvents.Transcript, on_message)  # type: ignore
+                stt_provider.on(LiveTranscriptionEvents.UtteranceEnd, on_utterance_end)  # type: ignore
+                stt_provider.on(LiveTranscriptionEvents.Error, on_error)  # type: ignore
+                stt_provider.on(LiveTranscriptionEvents.Close, on_close)  # type: ignore
 
-            async def on_close(self, close, **kwargs):
-                print(f"\n\n{close}\n\n")
+                while True:
+                    try:
+                        frame = await asyncio.wait_for(track.recv(), timeout=2)
+                        assert isinstance(frame, AudioFrame)
 
-            dg_connection.on(LiveTranscriptionEvents.Open, on_open) # type: ignore
-            dg_connection.on(LiveTranscriptionEvents.Transcript, on_message) # type: ignore
-            dg_connection.on(LiveTranscriptionEvents.UtteranceEnd, on_utterance_end) # type: ignore
-            dg_connection.on(LiveTranscriptionEvents.Error, on_error) # type: ignore
-            dg_connection.on(LiveTranscriptionEvents.Close, on_close) # type: ignore
+                        # await stt_provider.send(frame)
+                        await llm_provider.send(AudioMessageRequest(audio_frame=frame))
 
-            # Get the first frame to determine sample rate and channels
-            try:
-                first_frame = await asyncio.wait_for(track.recv(), timeout=2)
-                assert isinstance(first_frame, AudioFrame)
-                sample_rate = first_frame.rate
-                channels = len(first_frame.layout.channels)  # Convert tuple length to integer
-                
-                options: ListenWebSocketOptions = ListenWebSocketOptions(
-                    model="nova-3",
-                    punctuate=True,
-                    language="en-US",
-                    encoding="linear16",
-                    channels=channels,
-                    sample_rate=sample_rate,
-                    ## To get UtteranceEnd, the following must be set:
-                    interim_results=True,
-                    utterance_end_ms="2000",
-                    vad_events=True,
-                )
-
-                await dg_connection.start(options)
-                
-                # Send the first frame
-                if first_frame.format.name == "s16":
-                    pcm_bytes = first_frame.to_ndarray().tobytes()
-                    await dg_connection.send(pcm_bytes)
-            except asyncio.TimeoutError:
-                print("Failed to get first audio frame")
-                return
-
-            while True:
-                try:
-                    frame = await asyncio.wait_for(track.recv(), timeout=2)
-                    assert isinstance(frame, AudioFrame)
-                    
-                    if frame.format.name != "s16":
-                        print(f"Unsupported format: {frame.format.name}")
+                    except asyncio.TimeoutError:
+                        print("Audio track recv timed out")
                         continue
 
-                    pcm_bytes = frame.to_ndarray().tobytes()
-                    await dg_connection.send(pcm_bytes)
+                    except Exception as e:
+                        raise e
 
-                except asyncio.TimeoutError:
-                    print("Audio track recv timed out")
-                    continue
-                
-                except Exception as e:
-                    print(f"Error: {e}")
-                    break
-
-            
-                
-        self.pc.on('iceconnectionstatechange', on_ice_connection_state_change)
+        self.pc.on("iceconnectionstatechange", on_ice_connection_state_change)
         # Add audio track
         # self.pc.addTrack(await self.get_audio_track())
         self.pc.on("track", on_track)
@@ -186,21 +147,13 @@ class AudioCallServer:
                 if self.pc.connectionState == "failed":
                     await self.pc.close()
                 if self.pc.connectionState == "closed":
-                    with open("audio.wav", "wb") as f:
-                        wav_file = wave.open(f, 'wb')
-                        wav_file.setnchannels(2)  # Stereo
-                        wav_file.setsampwidth(2)  # 16-bit
-                        wav_file.setframerate(48000)  # 48kHz sample rate
-                        wav_file.writeframes(self.audio)
-                        wav_file.close()
+                    pass
 
         await self.pc.setRemoteDescription(offer)
         answer = await self.pc.createAnswer()
         await self.pc.setLocalDescription(answer)
 
         return {
-            'sdp': self.pc.localDescription.sdp,
-            'type': self.pc.localDescription.type
+            "sdp": self.pc.localDescription.sdp,
+            "type": self.pc.localDescription.type,
         }
-
-   
